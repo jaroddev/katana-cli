@@ -7,9 +7,8 @@ import (
 	"os"
 	"path"
 
+	"github.com/jaroddev/katana"
 	"github.com/jaroddev/katana/chapter"
-	"github.com/jaroddev/katana/manga"
-	"github.com/jaroddev/katana/update"
 	"github.com/manifoldco/promptui"
 	"github.com/spf13/cobra"
 )
@@ -20,29 +19,27 @@ var latestCmd = &cobra.Command{
 	Short: "Return the latest updates from mangakatana",
 	Run: func(cmd *cobra.Command, args []string) {
 
-		updateScraper := update.GetScraper()
-		updateScraper.Collector.Visit(update.Url(1))
+		ptr := katana.GetUpdates(katana.Url(1))
 
-		menu := createUpdateSelectionMenu(updateScraper.Ptr.Updates)
+		menu := createUpdateSelectionMenu(ptr.Updates)
 		index, err := selectUpdate(menu)
 
 		if err != nil {
 			os.Exit(1)
 		}
 
-		choice := updateScraper.Ptr.Updates[index]
+		choice := ptr.Updates[index]
 
-		mangaScraper := manga.GetScraper()
-		mangaScraper.Collector.Visit(choice.Url)
+		manga := katana.GetManga(choice.Url)
 
-		chapterSelectionMenu := createChapterSelectionMenu(*mangaScraper.Manga)
+		chapterSelectionMenu := createChapterSelectionMenu(*manga)
 		index, err = selectChapter(chapterSelectionMenu)
 
 		if err != nil {
 			os.Exit(1)
 		}
 
-		choosenChapter := mangaScraper.Manga.Chapters[index]
+		choosenChapter := manga.Chapters[index]
 
 		chapterScraper := chapter.DScraper{
 			Chapter: &chapter.Chapter{
@@ -81,7 +78,7 @@ var latestCmd = &cobra.Command{
 	},
 }
 
-func createUpdateSelectionMenu(items []update.Update) promptui.Select {
+func createUpdateSelectionMenu(items []katana.Update) promptui.Select {
 
 	titles := make([]string, 0)
 
@@ -109,7 +106,7 @@ func selectUpdate(menu promptui.Select) (id int, err error) {
 	return
 }
 
-func createChapterSelectionMenu(item manga.Manga) promptui.Select {
+func createChapterSelectionMenu(item katana.Manga) promptui.Select {
 	titles := make([]string, 0)
 
 	for _, chapter := range item.Chapters {
